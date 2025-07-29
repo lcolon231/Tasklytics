@@ -10,7 +10,7 @@ app = FastAPI()
 # ✅ CORSMiddleware applied FIRST
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://tasklytics.dev, https://www.tasklytics.dev"],
+    allow_origins=["https://tasklytics.dev", "https://www.tasklytics.dev"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
