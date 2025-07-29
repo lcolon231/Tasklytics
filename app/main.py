@@ -20,7 +20,7 @@ app.add_middleware(
 def root():
     return {"message": "Task Tracker API"}
 
-app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
+
 
 @app.get("/")
 def serve_react_app():
