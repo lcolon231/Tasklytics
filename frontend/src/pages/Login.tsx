@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { saveToken } from '../utils/auth'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.tasklytics.dev'
+
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -15,7 +17,7 @@ export default function Login() {
     form.append('password', password)
 
     try {
-      const res = await fetch('http://localhost:8000/auth/token', {
+      const res = await fetch(`${BASE_URL}/auth/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
