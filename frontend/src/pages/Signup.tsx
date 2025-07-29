@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { registerUser } from '../api'
 
 export default function Signup() {
   const [firstName, setFirstName] = useState('')
@@ -7,7 +8,7 @@ export default function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [age, setAge] = useState<number | ''>('')  // ✅ ensure age is number or empty
+  const [age, setAge] = useState<number | ''>('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const navigate = useNavigate()
@@ -25,25 +26,15 @@ export default function Signup() {
       last_name: lastName,
       email,
       password,
-      age: Number(age),  // ✅ convert to number before sending
+      age: Number(age),
     }
 
     try {
-      const res = await fetch('http://localhost:8000/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) {
-        const error = await res.text()
-        throw new Error(error)
-      }
-
+      await registerUser(payload)
       alert('Account created! You can now log in.')
       navigate('/login')
-    } catch (err) {
-      alert('Signup failed')
+    } catch (err: any) {
+      alert('Signup failed: ' + err.message)
       console.error(err)
     }
   }
