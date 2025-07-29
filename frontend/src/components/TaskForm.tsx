@@ -29,7 +29,7 @@ export const TaskForm: React.FC = () => {
     const due_at = new Date(form.dueAtLocal).toISOString()
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/tasks/', {
+      const res = await fetch('https://tasklytics.dev/tasks/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
