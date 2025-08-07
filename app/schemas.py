@@ -12,10 +12,9 @@ class TaskBase(BaseModel):
 
 class TaskCreate(BaseModel):
     title: str
-    description: Optional [str] = None
+    description: Optional[str] = None
     due_at: datetime
     user_email: EmailStr
-    due_at: datetime
 
 
 class TaskUpdate(BaseModel):
@@ -23,11 +22,10 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     due_at: Optional[datetime] = None
     user_email: Optional[EmailStr] = None
-    remined: Optional[bool] = None
+    reminded: Optional[bool] = None
 
 
 class TaskRead(TaskBase):
-
     id: int
     reminded: bool
 
@@ -44,6 +42,11 @@ class TaskOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class NotificationCreate(BaseModel):
+    task_id: int
+    message: str
+
+
 class NotificationOut(BaseModel):
     id: int
     task_id: int
@@ -51,17 +54,6 @@ class NotificationOut(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class NotificationCreate(BaseModel):
-    task_id: int
-    message: str
-
-
-class NotificationOut(NotificationCreate):
-    id: int
-    created_at: datetime
-
 
 
 class UserCreate(BaseModel):
@@ -78,8 +70,7 @@ class UserRead(BaseModel):
     first_name: str
     last_name: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserOut(BaseModel):
@@ -88,8 +79,7 @@ class UserOut(BaseModel):
     first_name: str
     last_name: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserLogin(BaseModel):

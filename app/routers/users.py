@@ -1,58 +1,89 @@
-# app/routers/users.py
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models import User
-from app.schemas import UserCreate, UserRead
-from passlib.context import CryptContext
+from app.schemas import UserOut, UserRead
+from app.auth.dependencies import get_current_active_user
 
 router = APIRouter()
 
-# Password‐hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@router.get("/me", response_model=UserOut)
+def get_current_user_profile(current_user: User = Depends(get_current_active_user)):
+    """Get current user's profile"""
+    return current_user
 
-@router.post("/", response_model=UserRead, tags=["users"])
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    """
-    Register a new user.
-    """
-    # Check for existing email
-    if db.query(User).filter(User.email == user.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Hash the plain‐text password
-    hashed_password = pwd_context.hash(user.password)
+@router.put("/me", response_model=UserOut)
+def update_current_user_profile(
+        updates: dict,
+        current_user: User = Depends(get_current_active_user),
+        db: Session = Depends(get_db)
+):
+    """Update current user's profile (non-sensitive fields only)"""
+    # Only allow updating certain fields
+    allowed_fields = {'first_name', 'last_name', 'age'}
 
-    # Create and persist
-    db_user = User(email=user.email, hashed_password=hashed_password)
-    db.add(db_user)
+    for field, value in updates.items():
+        if field in allowed_fields:
+            setattr(current_user, field, value)
+
     db.commit()
-    db.refresh(db_user)
-    return db_user
+    db.refresh(current_user)
+    return current_user
 
-@router.get("/", response_model=List[UserRead], tags=["users"])
-def list_users(db: Session = Depends(get_db)):
-    """
-    List all users.
-    """
-    return db.query(User).all()
 
-@router.get("/{user_id}", response_model=UserRead, tags=["users"])
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    """
-    Retrieve a single user by ID.
-    """
-    user = db.query(User).filter(User.id == user_id).first()
+@router.get("/{user_id}", response_model=UserRead)
+def get_user_profile(
+        user_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user)
+):
+    """Get another user's public profile (limited info)"""
+    # Users can only see their own profile or limited info of others
+    if user_id == current_user.id:
+        return current_user
+
+    user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Return limited information for other users
+    return {
+        "id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email  # You might want to hide this for privacy
+    }
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_current_user_account(
+        current_user: User = Depends(get_current_active_user),
+        db: Session = Depends(get_db)
+):
+    """Deactivate current user's account (soft delete)"""
+    # Soft delete - set is_active to False instead of actually deleting
+    current_user.is_active = False
+    db.commit()
+    return None
+
+
+# Admin endpoints (would need admin role checking)
+@router.get("/", response_model=List[UserRead])
+def list_all_users(
+        skip: int = 0,
+        limit: int = 100,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user)
+):
+    """List all users (admin only - implement role checking)"""
+    # TODO: Add admin role checking
+    # For now, any authenticated user can see this (not recommended for production)
+    users = db.query(User).filter(User.is_active == True).offset(skip).limit(limit).all()
+    return users
